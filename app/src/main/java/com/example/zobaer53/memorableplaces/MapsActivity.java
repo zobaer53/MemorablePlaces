@@ -2,18 +2,23 @@ package com.example.zobaer53.memorableplaces;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+
 import android.os.Bundle;
+
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -21,7 +26,9 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -37,7 +44,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
             mMap.clear();
             mMap.addMarker(new MarkerOptions().position(userLocation).title(title).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 10));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 12));
         }
     }
 
@@ -104,10 +111,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1);
             }
         } else {
-
             Location placeLocation = new Location(LocationManager.GPS_PROVIDER);
             placeLocation.setLatitude(MainActivity.locations.get(intent.getIntExtra("placeNumber",0)).latitude);
             placeLocation.setLongitude(MainActivity.locations.get(intent.getIntExtra("placeNumber",0)).longitude);
+
             centerMapOnLocation(placeLocation, MainActivity.places.get(intent.getIntExtra("placeNumber",0)));
         }
     }
@@ -121,14 +128,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         try {
 
-            List<Address> listAdresses = geocoder.getFromLocation(latLng.latitude,latLng.longitude,1);
+            List<Address> listAdddresses = geocoder.getFromLocation(latLng.latitude,latLng.longitude,1);
 
-            if (listAdresses != null && listAdresses.size() > 0) {
-                if (listAdresses.get(0).getThoroughfare() != null) {
-                    if (listAdresses.get(0).getSubThoroughfare() != null) {
-                        address += listAdresses.get(0).getSubThoroughfare() + " ";
+            if (listAdddresses != null && listAdddresses.size() > 0) {
+                if (listAdddresses.get(0).getThoroughfare() != null) {
+                    if (listAdddresses.get(0).getSubThoroughfare() != null) {
+                        address += listAdddresses.get(0).getSubThoroughfare() + " ";
                     }
-                    address += listAdresses.get(0).getThoroughfare();
+                    address += listAdddresses.get(0).getThoroughfare();
                 }
             }
 
@@ -141,12 +148,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             address += sdf.format(new Date());
         }
 
-        mMap.addMarker(new MarkerOptions().position(latLng).title(address));
+        mMap.addMarker(new MarkerOptions().position(latLng).title(address).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
 
         MainActivity.places.add(address);
         MainActivity.locations.add(latLng);
 
         MainActivity.arrayAdapter.notifyDataSetChanged();
+
+        SharedPreferences sharedPreferences = this.getSharedPreferences("com.example.zobaer53.memorableplaces", Context.MODE_PRIVATE);
+
+        try {
+
+            ArrayList<String> latitudes = new ArrayList<>();
+            ArrayList<String> longitudes = new ArrayList<>();
+
+            for (LatLng coord : MainActivity.locations) {
+                latitudes.add(Double.toString(coord.latitude));
+                longitudes.add(Double.toString(coord.longitude));
+            }
+
+            sharedPreferences.edit().putString("places", ObjectSerializer.serialize(MainActivity.places)).apply();
+            sharedPreferences.edit().putString("lats", ObjectSerializer.serialize(latitudes)).apply();
+            sharedPreferences.edit().putString("lons", ObjectSerializer.serialize(longitudes)).apply();
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Toast.makeText(this,"Location Saved!",Toast.LENGTH_SHORT).show();
     }
