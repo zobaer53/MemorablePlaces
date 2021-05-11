@@ -1,2 +1,2 @@
 # MemorablePlaces
-Users can add or remove visited locations with a long press.
+Users can add or remove visited locations with a long press. Also aded SharedPreferences,
